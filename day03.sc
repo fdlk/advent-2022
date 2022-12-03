@@ -15,3 +15,14 @@ val part1 = input
   .map(priority)
   .sum
 
+def badge(rucksacks: List[String]): Char =
+  rucksacks
+    .reduce((a, b) => a.filter(b.contains(_)))
+    .head
+
+val part2 = input
+  .sliding(3, 3)
+  .map(badge)
+  .map(priority)
+  .sum
+
