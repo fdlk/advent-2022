@@ -18,7 +18,7 @@ def parseShape(str: String): Shape = str match {
   case "C" | "Z" => Shape.Scissors
 }
 
-def angstGegner(shape: Shape): Shape = shape match {
+def nemesis(shape: Shape): Shape = shape match {
   case Shape.Rock => Shape.Paper
   case Shape.Paper => Shape.Scissors
   case Shape.Scissors => Shape.Rock
@@ -32,7 +32,7 @@ def scoreForShape(shape: Shape): Int = shape match {
 
 def scoreForOutcome(round: List[Shape]): Int = round match {
   case List(x, y) if x == y => 3
-  case List(x, y) if y == angstGegner(x) => 6
+  case List(x, y) if y == nemesis(x) => 6
   case _ => 0
 }
 
@@ -45,11 +45,11 @@ def parseRound(input: List[String]): List[Shape] = {
   val move = parseShape(input.head)
   val countermove = input(1) match {
     // X means lose
-    case "X" => Shape.shapes.find(angstGegner(_) == move).get
+    case "X" => Shape.shapes.find(nemesis(_) == move).get
     // Y means draw
     case "Y" => move
     // Z means win
-    case "Z" => angstGegner(move)
+    case "Z" => nemesis(move)
   }
   List(move, countermove)
 }
