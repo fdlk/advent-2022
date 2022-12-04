@@ -1,29 +1,20 @@
 import common.loadPackets
 
-case class Assignment(from: Int, to: Int) {
-  def contains(other: Assignment): Boolean =
-    from <= other.from && to >= other.to
-
-  def overlaps(other: Assignment): Boolean =
-    to >= other.from && from <= other.to
+def parseRange(description: String): Range = {
+  val split = description.split("-")
+  Range.inclusive(split(0).toInt, split(1).toInt)
 }
 
-object Assignments {
-  def parseAssignment(description: String): Assignment = {
-    val split = description.split("-")
-    Assignment(split(0).toInt, split(1).toInt)
-  }
-}
-
-val input:List[List[Assignment]] = loadPackets(List("day04.txt"))
+val input = loadPackets(List("day04.txt"))
   .map(_.split(",")
-    .map(Assignments.parseAssignment)
+    .map(parseRange)
+    .map(_.toSet)
     .toList)
 
 val part1 = input.count({
-  case List(a, b) => a.contains(b) || b.contains(a)
+  case List(a, b) => a.subsetOf(b) || b.subsetOf(a)
 })
 
 val part2 = input.count({
-  case List(a, b) => a.overlaps(b)
+  case List(a, b) => a.intersect(b).nonEmpty
 })
