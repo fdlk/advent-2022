@@ -24,10 +24,10 @@ def reduce(state: State, line: String): State = line match {
 }
 
 val sizes = input.foldLeft(State())(reduce).sizes.values
-val part1 = sizes.filter(_ < 100_000).sum
+val part1 = sizes.filter(_ <= 100_000).sum
 
 val totalSpaceUsed = sizes.max
 val totalSpaceLeft = 70_000_000 - totalSpaceUsed
 val toBeDeleted = 30_000_000 - totalSpaceLeft
 
-val part2 = sizes.filter(_ > toBeDeleted).min
+val part2 = sizes.filter(_ >= toBeDeleted).min
