@@ -10,17 +10,13 @@ case class State(cwd : List[String] = List("/"), sizes: Map[List[String], Int] =
   }
 }
 
-val dir = """dir (.*)""".r
-val file = """(\d+) (.*)""".r
-val cd = """\$ cd (.*)""".r
-
 def reduce(state: State, line: String): State = line match {
   case "$ cd /" => state.copy(cwd = List("/"))
   case "$ ls" => state
-  case dir(_) => state
-  case file(size, _) => state.withFile(size.toInt)
+  case s"dir ${_}" => state
   case "$ cd .." => state.copy(cwd = state.cwd.tail)
-  case cd(dir) => state.copy(cwd = dir :: state.cwd)
+  case s"$$ cd ${dir}" => state.copy(cwd = dir :: state.cwd)
+  case s"${size} ${_}" => state.withFile(size.toInt)
 }
 
 val sizes = input.foldLeft(State())(reduce).sizes.values
