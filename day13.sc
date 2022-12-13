@@ -1,39 +1,30 @@
-import fastparse._
-import common._
+import fastparse.{parse, Parsed}
+import common.{loadPackets, expr}
 
-val input = loadPackets(List("day13.txt"))
-
-def parseExpression(line: String): Any = {
-  val Parsed.Success(value, _) = parse(line, common.expr(_))
-  value
+def parseExpression(line: String): Any = parse(line, expr(_)) match {
+  case Parsed.Success(value, _) => value
 }
 
-def isInOrder(pair: (Any, Any)): Option[Boolean] = pair match {
-  case (a: Int, b: Int) if a < b => Some(true)
-  case (a: Int, b: Int) if a == b => None
-  case (a: Int, b: Int) if a > b => Some(false)
-  case (a: List[Any], b: List[Any]) => (a, b) match {
-    case (a :: _, b :: _) if isInOrder(a, b).nonEmpty => isInOrder((a, b))
-    case (_ :: as, _ :: bs) => isInOrder((as, bs))
-    case (Nil, Nil) => None
-    case (Nil, _) => Some(true)
-    case (_, Nil) => Some(false)
-  }
-  case (a: Int, b: List[Any]) => isInOrder((List(a), b))
-  case (a: List[Any], b: Int) => isInOrder((a, List(b)))
+val input: List[Any] = loadPackets(List("day13.txt")).filter(_.nonEmpty).map(parseExpression)
+
+def compare(a: Any, b: Any): Int = (a, b) match {
+  case (a: Int, b: Int) => a.compare(b)
+  case (a :: _, b :: _) if compare(a, b) != 0 => compare(a, b)
+  case (_ :: as, _ :: bs) => compare(as, bs)
+  case (Nil, Nil) => 0
+  case (Nil, _) => -1
+  case (_, Nil) => 1
+  case (a: Int, b: List[Any]) => compare(List(a), b)
+  case (a: List[Any], b: Int) => compare(a, List(b))
 }
 
-val part1 = input.grouped(3)
-  .map(lines => (parseExpression(lines.head), parseExpression(lines(1))))
-  .map(pair => isInOrder(pair).get)
+val part1 = input.grouped(2)
+  .map({ case List(a, b) => compare(a, b) })
   .zipWithIndex
-  .filter(_._1)
+  .filter(_._1 < 0)
   .map(_._2 + 1)
   .sum
 
-val divider1 = parseExpression("[[2]]")
-val divider2 = parseExpression("[[6]]")
-val sorted = (divider1 :: divider2 :: input.filter(_.nonEmpty).map(parseExpression))
-  .sortWith((a, b) => isInOrder(a, b).get)
-
-val part2 = (sorted.indexOf(divider1) + 1) * (sorted.indexOf(divider2) + 1)
+val dividers = List("[[2]]","[[6]]").map(parseExpression)
+val sorted = (dividers ::: input).sorted(compare)
+val part2 = dividers.map(sorted.indexOf).map(_ + 1).product

@@ -107,17 +107,17 @@ package object common {
 
 
 
-  def space[_: P] = P(CharsWhileIn(" \r\n", 0))
+  private def space[_: P] = P(CharsWhileIn(" \r\n", 0))
 
-  def digits[_: P] = P(CharsWhileIn("0-9"))
+  private def digits[_: P] = P(CharsWhileIn("0-9"))
 
-  def integral[_: P] = P("0" | CharIn("1-9") ~ digits.?)
+  private def integral[_: P] = P("0" | CharIn("1-9") ~ digits.?)
 
-  def number[_: P] = P(CharIn("+\\-").? ~ integral).!.map(
+  private def number[_: P] = P(CharIn("+\\-").? ~ integral).!.map(
     x => x.toInt
   )
 
-  def array[_: P] =
+  private def array[_: P] =
     P("[" ~/ expr.rep(sep = ","./) ~ space ~ "]").map(List(_: _*))
 
   def expr[_: P]: P[Any] = P(space ~ (array | number) ~ space)
