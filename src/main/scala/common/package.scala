@@ -1,5 +1,6 @@
 import java.io.File
 import scala.annotation.tailrec
+import fastparse._, NoWhitespace._
 
 package object common {
 
@@ -103,4 +104,23 @@ package object common {
 
     loop(Set(), Map(start -> NodeInfo(0, grid.heuristicDistance(start, finish))))
   }
+
+
+
+  def space[_: P] = P(CharsWhileIn(" \r\n", 0))
+
+  def digits[_: P] = P(CharsWhileIn("0-9"))
+
+  def integral[_: P] = P("0" | CharIn("1-9") ~ digits.?)
+
+  def number[_: P] = P(CharIn("+\\-").? ~ integral).!.map(
+    x => x.toInt
+  )
+
+  def array[_: P] =
+    P("[" ~/ expr.rep(sep = ","./) ~ space ~ "]").map(List(_: _*))
+
+  def expr[_: P]: P[Any] = P(space ~ (array | number) ~ space)
+
+
 }
