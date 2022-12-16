@@ -58,3 +58,17 @@ def part1(state: State, toVisit: List[ValveId], bestScoreSoFar: Int = 0): Int = 
 }
 
 part1(State(), toVisit)
+
+def partition(toVisit: List[ValveId]): List[(List[ValveId], List[ValveId])] = {
+  if (toVisit.isEmpty) List((List(), List()))
+  else {
+    partition(toVisit.tail)
+      .flatMap({case (me: List[ValveId], elephant: List[ValveId]) =>
+        List((toVisit.head :: me, elephant), (me, toVisit.head :: elephant))})
+  }
+}
+
+val options = partition(toVisit)
+
+val part2 = options.map({case (me, elephant) => part1(State(minutesLeft = 26, closed = me.toSet), me) +
+    part1(State(minutesLeft = 26, closed = elephant.toSet), elephant)}).max
