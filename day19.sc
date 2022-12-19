@@ -1,4 +1,5 @@
 import scala.collection.parallel.CollectionConverters._
+import scala.annotation.tailrec
 
 sealed abstract class Resource
 case object Ore extends Resource
@@ -7,13 +8,18 @@ case object Obsidian extends Resource
 case object Geode extends Resource
 
 case class Resources(ore: Int = 0, clay: Int = 0, obsidian: Int = 0, geode: Int = 0) {
+  def get(resource: Resource) = resource match {
+    case Ore => ore
+    case Clay => clay
+    case Obsidian => obsidian
+    case Geode => geode
+  }
   def has(resource: Resource): Boolean = resource match {
     case Ore => ore > 0
     case Clay => clay > 0
     case Obsidian => obsidian > 0
     case Geode => geode > 0
   }
-  def hasNo(resource: Resource): Boolean = !has(resource)
   def +(resource: Resource): Resources = resource match {
     case Ore => copy(ore = ore + 1)
     case Clay => copy(clay = clay + 1)
@@ -25,7 +31,9 @@ case class Resources(ore: Int = 0, clay: Int = 0, obsidian: Int = 0, geode: Int 
   def >=(other: Resources): Boolean = ore >= other.ore && clay >= other.clay && obsidian >= other.obsidian && geode >= other.geode
 }
 
-case class Blueprint(number: Int, costs: Map[Resource, Resources])
+case class Blueprint(number: Int, costs: Map[Resource, Resources]) {
+  def maxCost(resource: Resource): Int = costs.values.map(_.get(resource)).max
+}
 
 object Blueprints {
   def of(input: List[String]): Blueprint = Blueprint(
@@ -54,35 +62,36 @@ case class State(minutes: Int = 1,
   def buildNow(resource: Resource): State =
     copy(resources = resources - blueprint.costs(resource), robots = robots + resource)
 
-  def tryBuild(resource: Resource): State =
-    if (canAfford(resource)) harvest.buildNow(resource)
-    else harvest
+  @tailrec
+  final def buildNext(resource: Resource): Option[State] =
+    if (minutes == maxMinutes) None
+    else if (canAfford(resource)) Some(harvest.buildNow(resource))
+    else harvest.buildNext(resource)
 
-  def buildNext(resource: Resource): Option[State] =
-    LazyList.iterate(this)(s => s.tryBuild(resource))
-      .find(_.robots == robots + resource)
-      .filter(_.minutes <= maxMinutes)
+  @tailrec
+  final def justHarvest: State =
+    if (minutes == maxMinutes) this
+    else harvest.justHarvest
 
-  def justHarvest: State = LazyList.iterate(this)(_.harvest).find(_.minutes == maxMinutes).get
-
-    def maxGeode: Int =
-      if (minutes == maxMinutes)
-        resources.geode
-      else if (canAfford(Geode))
-        harvest.buildNow(Geode).maxGeode
-      else
-        List(Geode, Obsidian, Clay, Ore)
-          .filter({
-            case Ore => robots.hasNo(Clay)
-            case Clay => true
-            case Obsidian => robots.has(Clay)
-            case Geode => robots.has(Obsidian)
-          })
-          .map(buildNext)
-          .filter(_.isDefined)
-          .map(_.get.maxGeode)
-          .sortBy(-_).headOption
-          .getOrElse(justHarvest.resources.geode)
+  def maxGeode: Int = {
+    if (minutes == maxMinutes)
+      resources.geode
+    else if (canAfford(Geode))
+      harvest.buildNow(Geode).maxGeode
+    else
+      List(Geode, Obsidian, Clay, Ore)
+        .filter(resource => resource == Geode || robots.get(resource) < blueprint.maxCost(resource))
+        .filter({
+          case Obsidian => robots.has(Clay)
+          case Geode => robots.has(Obsidian)
+          case _ => true
+        })
+        .map(buildNext)
+        .filter(_.isDefined)
+        .map(_.get.maxGeode)
+        .sorted.reverse.headOption
+        .getOrElse(justHarvest.resources.geode)
+  }
 }
 
 val part1 = input.map(blueprint => State(blueprint = blueprint).maxGeode * blueprint.number).sum
