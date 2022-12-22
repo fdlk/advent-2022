@@ -94,5 +94,5 @@ case class State(minutes: Int = 1,
   }
 }
 
-val part1 = input.map(blueprint => State(blueprint = blueprint).maxGeode * blueprint.number).sum
+val part1 = input.par.map(blueprint => State(blueprint = blueprint).maxGeode * blueprint.number).sum
 val part2 = input.take(3).par.map(blueprint => State(blueprint = blueprint, maxMinutes = 33).maxGeode).product
