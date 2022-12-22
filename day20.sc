@@ -1,10 +1,8 @@
 val input = common.loadPackets(List("day20.txt")).map(_.toInt)
 
-def sensibleMod(a: Long, b: Int): Int = ((a % b).toInt + b) % b
-
 def shuffle(list: List[(Long, Int)], element: (Long, Int)): List[(Long, Int)] = {
   val index = list.indexOf(element)
-  val newIndex = sensibleMod(index + element._1, list.length - 1)
+  val newIndex = Math.floorMod(index + element._1, list.length - 1)
   if (newIndex > index) {
     list.slice(0, index) :::
       list.slice(index + 1, newIndex + 1) :::
