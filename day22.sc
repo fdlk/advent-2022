@@ -113,7 +113,7 @@ case class MapCoord(p: Point, facing: Facing) {
   }
 
   def onMatchingEdge: MapCoord = {
-    val pair = edgePairs.find(_.exists(_.points.contains(p))).get
+    val pair = edgePairs.find(_.exists(edge => edge.points.contains(p) && edge.outwardFacing == facing)).get
     val (here, there) = pair.partition(_.points.contains(p))
     val projected = project(p, here.head, there.head)
     MapCoord(projected, oppositeFacing(there.head.outwardFacing))
