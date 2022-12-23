@@ -11,13 +11,11 @@ case class Point(x: Int, y: Int) {
 }
 
 val allDirections = List("NW", "N", "NE", "E", "SE", "S", "SW", "W")
-val orthogonal = List("N", "S", "W", "E")
+val start: Set[Point] = (for (x <- input.indices;
+                              y <- input(x).indices if input(x)(y) == '#')
+yield Point(x, y)).toSet
 
-val start: Set[Point] = (for(x <- input.indices;
-    y <- input(x).indices if input(x)(y) == '#')
-  yield Point(x, y)).toSet
-
-case class State(elves: Set[Point] = start, directions: List[String] = orthogonal) {
+case class State(elves: Set[Point] = start, directions: List[String] = List("N", "S", "W", "E")) {
   def proposeMove(elf: Point): Option[Point] =
     if (!allDirections.map(elf.move).exists(elves.contains))
       None
@@ -35,13 +33,13 @@ case class State(elves: Set[Point] = start, directions: List[String] = orthogona
     copy(elves = elves.map(elf => move(elf, proposedMoves)), directions = directions.tail ::: List(directions.head))
   }
 
-  def emptyGround: Int = (for(x <- elves.map(_.x).min to elves.map(_.x).max;
-                             y <- elves.map(_.y).min to elves.map(_.y).max if !elves.contains(Point(x, y)))
-    yield 1).sum
+  def emptyGround: Int = (for (x <- elves.map(_.x).min to elves.map(_.x).max;
+                               y <- elves.map(_.y).min to elves.map(_.y).max if !elves.contains(Point(x, y)))
+  yield 1).sum
 }
 
 val iterations = LazyList.iterate(State())(_.next)
 val part1 = iterations(10).emptyGround
 
-
-
+val part2 = iterations.sliding(2).map(_.toList)
+  .indexWhere({ case List(before, after) => before.elves == after.elves }) + 1
