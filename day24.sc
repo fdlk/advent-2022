@@ -35,8 +35,6 @@ case class Point(row: Int, col: Int) {
   }
 }
 
-Point(3,4).move('v').wrap
-
 type Blizzards = List[(Point, Char)]
 val directions = "><^v"
 
@@ -56,34 +54,36 @@ val blizzards: List[Set[Point]] = LazyList.iterate(blizzardStart)(update)
 
 val start: Point = Point(0, input.head.indexOf('.'))
 val end: Point = Point(height + 1, input(height + 1).indexOf('.'))
-case class State(pos: Point = start, minutes: Int = 0) {
+case class State(pos: Point = start,
+                 minutes: Int = 0,
+                 searchingForSnacks: Boolean = false,
+                 carryingSnacks: Boolean = false) {
   val isSnowFree: Boolean = !blizzards(minutes % period).contains(pos)
 
+  def checkForSnacks: State =
+    copy(searchingForSnacks = searchingForSnacks || pos == end,
+      carryingSnacks = carryingSnacks || (searchingForSnacks && pos == start))
+
   def move(direction: Char): Option[State] =
-    Some(copy(pos = pos.move(direction), minutes = minutes + 1))
+    Some(copy(pos = pos.move(direction), minutes = minutes + 1).checkForSnacks)
       .filter(_.pos.isAccessible)
       .filter(_.isSnowFree)
-
-  def printMap: String = (0 to height + 1).map(row =>
-    (0 to width + 1).map(col => {
-      val p = Point(row, col)
-      if (!p.isAccessible)
-        '#'
-      else if (blizzards(minutes % period).contains(p))
-        '*'
-      else if (p == pos)
-        '@'
-      else
-        '.'
-    }).mkString).mkString("\n")
 }
 
-val grid = new Grid[State] {
+val part1 = aStarSearch2[State](State(), State(pos = end), new Grid[State] {
   override def heuristicDistance(from: State, to: State): Int = (from.pos - to.pos).size
-
   override def getNeighbours(state: State): Iterable[State] = "><^v.".flatMap(state.move)
-
   override def moveCost(from: State, to: State): Int = 1
-}
+}, _.pos == end)
 
-aStarSearch2[State](State(), State(pos = end), grid, _.pos == end)
+val part2 = aStarSearch2[State](State(), State(pos = end), new Grid[State] {
+  override def heuristicDistance(from: State, to: State): Int =
+    if (from.carryingSnacks)
+      (from.pos - end).size
+    else if(from.searchingForSnacks)
+      (from.pos - start).size + (start - end).size
+    else
+      (from.pos - end). size + 2 * (start - end).size
+  override def getNeighbours(state: State): Iterable[State] = "><^v.".flatMap(state.move)
+  override def moveCost(from: State, to: State): Int = 1
+}, state => state.pos == end && state.carryingSnacks)
