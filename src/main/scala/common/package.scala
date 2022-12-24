@@ -81,14 +81,16 @@ package object common {
     def moveCost(from: T, to: T): Int
   }
 
-  def aStarSearch[T](start: T, finish: T, grid: Grid[T]): Option[Int] = {
+  def aStarSearch[T](start: T, finish: T, grid: Grid[T]): Option[Int] = aStarSearch2[T](start, finish, grid, _ == finish)
+
+  def aStarSearch2[T](start: T, finish: T, grid: Grid[T], isFinished: T => Boolean): Option[Int] = {
     case class NodeInfo(costFromStart: Int, estimatedTotalCost: Int)
 
     @tailrec
     def loop(closed: Set[T], open: Map[T, NodeInfo]): Option[Int] = {
       if (open.isEmpty) return None
       val (current, NodeInfo(currentCostFromStart, estimatedTotalCost)) = open.minBy(_._2.estimatedTotalCost)
-      if (current == finish) return Some(estimatedTotalCost)
+      if (isFinished(current)) return Some(estimatedTotalCost)
       loop(
         closed + current,
         grid.getNeighbours(current)
